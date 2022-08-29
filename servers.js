@@ -1,31 +1,7 @@
 /** @param {NS} ns */
 let ns_global;
 import { AttackLauncher, Attack  } from 'attack';
-
-const discoverServer = (server, depth) => {
-	let visited = [];
-	let path = {};
-	discoverServersDFS(path, visited, server, depth)
-	return path;
-}
-
-const discoverServersDFS = (path, visited, server, depth) => {
-	if (depth == 0) {
-		return;
-	}
-	visited.push(server)
-	path[server] = []
-	const neighbors = ns_global.scan(server)
-	neighbors.forEach((child) => {
-
-		if (!visited.includes(child)) {
-			if (!path[server].includes(child)) {
-				path[server].push(child);
-			}
-			discoverServersDFS(path, visited, child, depth - 1)
-		}
-	})
-}
+import { discoverServer } from 'discovery'
 
 
 
@@ -73,7 +49,7 @@ export async function main(ns) {
 	
 	const depth = 15;
 	let servers = []
-	const paths = discoverServer("home", depth);
+	const paths = discoverServer("home", depth, ns_global);
 	Object.keys(paths).forEach(v => servers.push(new Server(v, paths[v])));
 
 	const hackableServers = servers.filter(s => s.haveHackingLevel === "yes")
@@ -109,11 +85,12 @@ const launchAttack = (serverPaths,ns) => {
 	let launcher = null ; 
 	let hackedServers = 0 ;
 	for(let [server, _] of Object.entries(serverPaths)){
+
 		launcher = new AttackLauncher(server,ns);
-		launcher.addAttack(new Attack('brutessh', ns_global.brutessh))
-		launcher.addAttack(new Attack('ftpcrack', ns_global.ftpcrack))
-		launcher.addAttack(new Attack('relaysmtp', ns_global.relaysmtp))
-		
+		launcher.addAttack(new Attack('brutessh.exe', ns_global.brutessh, ns))
+		launcher.addAttack(new Attack('ftpcrack.exe', ns_global.ftpcrack, ns))
+		launcher.addAttack(new Attack('relaysmtp.exe', ns_global.relaysmtp, ns))
+		launcher.addAttack(new Attack('httpworm.exe', ns_global.httpworm, ns))
 		
 		if (launcher.attack()){
 			hackedServers += 1;

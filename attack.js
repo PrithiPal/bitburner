@@ -10,16 +10,17 @@ export async function main(ns) {
 
 
 export class Attack{
-	constructor(name, executable){
+	constructor(name, executable,ns){
+		this.ns_global = ns
 		this.name = name
 		this.executable = executable
 	}
 
 	isAvailable(){
-		if(ns_global.fileExists(this.name)){
-			return True
+		if(this.ns_global.fileExists(this.name, "home")){
+			return true
 		}
-		return False
+		return false
 	}
 
 	attack(server){
@@ -43,13 +44,15 @@ export class AttackLauncher {
 
 	canAttack(){
 		const hasLevel = this.ns_global.getHackingLevel() >= this.ns_global.getServerRequiredHackingLevel(this.targetServer)
-		const havePorts = this.attacks.length >= this.portsNeeded
+		const attacksAvailable = this.attacks.filter(attack=>attack.isAvailable()).length
+
+		const havePorts = attacksAvailable >= this.portsNeeded
 		if (!hasLevel){
 			this.ns_global.tprint(`current level ${this.ns_global.getHackingLevel()} < level needed ${this.ns_global.getServerRequiredHackingLevel(this.targetServer)} for '${this.targetServer}. Aborting...'`)
 			return false
 		}
 		if(!havePorts){
-			this.ns_global.tprint(`attacks available ${this.attacks.length} > ports needed ${this.portsNeeded} for '${this.targetServer}. Aborting...'`)
+			this.ns_global.tprint(`attacks available ${attacksAvailable} > ports needed ${this.portsNeeded} for '${this.targetServer}. Aborting...'`)
 			return false
 		}
 		return true
