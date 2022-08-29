@@ -1,6 +1,6 @@
 /** @param {NS} ns */
 let ns_global;
-import {Attack} from 'attack';
+import { AttackLauncher, Attack  } from 'attack';
 
 const discoverServer = (server, depth) => {
 	let visited = [];
@@ -96,22 +96,28 @@ export async function main(ns) {
 	ns.tprint(`All Servers : ${servers.length}`)
 	ns.tprint(`Hackable Servers : ${hackableServers.length}`)
 	
-	const ATTACK = false ; 
+	const ATTACK = true ; 
 	const INSTALL_BACKDOOR = true;
 
 	if (ATTACK === true){
-		for(let [server, _] of Object.entries(paths)){
-			attackServer = new Attack(server,ns);
-			// if (ns_global.hasRootAccess(server)){
-			// 	ns_global.installBackdoor(server)
-			// }
-			if (attackServer.attack()){
-				hackedServers += 1;
-				// ns_global.installBackdoor(server)
-			}
-		}
-		ns.tprint(`New Hacked Servers : ${hackedServers}`)
+		launchAttack(paths,ns)
 	}
+}
 
 
+const launchAttack = (serverPaths,ns) => {
+	let launcher = null ; 
+	let hackedServers = 0 ;
+	for(let [server, _] of Object.entries(serverPaths)){
+		launcher = new AttackLauncher(server,ns);
+		launcher.addAttack(new Attack('brutessh', ns_global.brutessh))
+		launcher.addAttack(new Attack('ftpcrack', ns_global.ftpcrack))
+		launcher.addAttack(new Attack('relaysmtp', ns_global.relaysmtp))
+		
+		
+		if (launcher.attack()){
+			hackedServers += 1;
+		}
+	}
+	ns_global.tprint(`Newly Hacked Servers : ${hackedServers}`)
 }

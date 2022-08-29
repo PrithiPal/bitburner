@@ -16,9 +16,7 @@
  export async function main(ns) {
      ns_global = ns
      const mainCluster = new Cluster('mainCluster') 
-     for(let idx=0; idx < ns.hacknet.numNodes() ; idx ++){
-         mainCluster.addNode(new Node(idx))
-     }
+     mainCluster.reloadAllNodes()
  
      const thousand = 1000
      const hundred_k = thousand * 100
@@ -32,11 +30,20 @@
  
  
      const EMERGENCY_FUND = 1000 // Will spend only if more than this amount.
-     const SLEEP_SECONDS = 5 // Time in between the 
+     const SLEEP_SECONDS = 2 // Time in between the 
      
+     let newNode = false
      while(true){
-         mainCluster.refresh()
-         buyNewNodes(EMERGENCY_FUND)
+         if(newNode){
+             mainCluster.reloadAllNodes()
+             newNode = false
+         }
+         else{
+             mainCluster.refresh()
+         }
+         if (buyNewNodes(EMERGENCY_FUND)){
+             newNode = true
+         }
          upgradeBottomNodes(mainCluster, EMERGENCY_FUND)
          await ns_global.sleep(SLEEP_SECONDS*1000);
      }
@@ -46,15 +53,19 @@
      // mainCluster.getBottomNodes(5,'cores').forEach((node)=>ns.tprint(`${node.name} : ${node.cores}`))
  }
  
+ 
+ 
+ 
  const buyNewNodes = (thresh) => {
      const purchaseCost = ns_global.hacknet.getPurchaseNodeCost()
      const availableMoney = ns_global.getServerMoneyAvailable("home") - thresh
      if (purchaseCost < availableMoney){
          ns_global.hacknet.purchaseNode()
-         ns_global.tprint(`Purchased New Node! for ${purchaseCost}`)
-         return
+         ns_global.print(`Purchased New Node! for ${purchaseCost}`)
+         return true
      }
-     ns_global.tprint(`Need ${purchaseCost - availableMoney} money to buy next node`)
+     ns_global.print(`Need ${purchaseCost - availableMoney} money to buy next node`)
+     return false
  }
  
  
@@ -89,6 +100,12 @@
      constructor(name){
          this.name = name
          this.nodes = []
+     }
+ 
+     reloadAllNodes(){
+         for(let idx=0; idx < ns_global.hacknet.numNodes() ; idx ++){
+             this.addNode(new Node(idx))
+         }
      }
  
      addNode(node){
@@ -155,15 +172,15 @@
      }
  
      print() {
-         ns_global.tprint(this.name)
-         ns_global.tprint(`\tlevel = ${this.level}`)
-         ns_global.tprint(`\tram = ${this.ram}`)
-         ns_global.tprint(`\tcores = ${this.cores}`)
-         ns_global.tprint(`\tusedRam = ${this.tusedRam}`)
-         ns_global.tprint(`\tcache = ${this.cache}`)
-         ns_global.tprint(`\tproduction = ${this.production}`)
-         ns_global.tprint(`\ttimeOnline = ${this.timeOnline}`)
-         ns_global.tprint(`\ttotalProduction = ${this.totalProduction}`)
+         ns_global.print(this.name)
+         ns_global.print(`\tlevel = ${this.level}`)
+         ns_global.print(`\tram = ${this.ram}`)
+         ns_global.print(`\tcores = ${this.cores}`)
+         ns_global.print(`\tusedRam = ${this.tusedRam}`)
+         ns_global.print(`\tcache = ${this.cache}`)
+         ns_global.print(`\tproduction = ${this.production}`)
+         ns_global.print(`\ttimeOnline = ${this.timeOnline}`)
+         ns_global.print(`\ttotalProduction = ${this.totalProduction}`)
      }
  
  
@@ -188,10 +205,10 @@
          const availableMoney = ns_global.getServerMoneyAvailable("home") - thresh
          if(purchaseCost < availableMoney){
              functionMaps[resource]['upgrade'](this.index,this.cores+1)
-             ns_global.tprint(`Upgraded '${this.name}' ${resource} from ${this.cores-1} to ${this.cores}`)
+             ns_global.print(`Upgraded '${this.name}' ${resource} from ${this.cores-1} to ${this.cores}`)
              return true
          }
-         ns_global.tprint(`Need ${purchaseCost-availableMoney} to upgrade '${this.cores} Cores'`)
+         ns_global.print(`Need ${purchaseCost-availableMoney} to upgrade '${this.cores} Cores'`)
          return false
  
      }
