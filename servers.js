@@ -47,7 +47,7 @@ class Server {
 export async function main(ns) {
 	ns_global = ns;
 	
-	const depth = 15;
+	const depth = 50;
 	let servers = []
 	const paths = discoverServer("home", depth, ns_global);
 	Object.keys(paths).forEach(v => servers.push(new Server(v, paths[v])));
@@ -87,10 +87,11 @@ const launchAttack = (serverPaths,ns) => {
 	for(let [server, _] of Object.entries(serverPaths)){
 
 		launcher = new AttackLauncher(server,ns);
-		launcher.addAttack(new Attack('brutessh.exe', ns_global.brutessh, ns))
-		launcher.addAttack(new Attack('ftpcrack.exe', ns_global.ftpcrack, ns))
-		launcher.addAttack(new Attack('relaysmtp.exe', ns_global.relaysmtp, ns))
-		launcher.addAttack(new Attack('httpworm.exe', ns_global.httpworm, ns))
+		launcher.addAttack(new Attack('BruteSSH.exe', ns_global.brutessh, ns))
+		launcher.addAttack(new Attack('FTPCrack.exe', ns_global.ftpcrack, ns))
+		launcher.addAttack(new Attack('relaySMTP.exe', ns_global.relaysmtp, ns))
+		launcher.addAttack(new Attack('HTTPWorm.exe', ns_global.httpworm, ns))
+		launcher.addAttack(new Attack('SQLInject.exe', ns_global.sqlinject, ns))
 		
 		if (launcher.attack()){
 			hackedServers += 1;
