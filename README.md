@@ -12,7 +12,7 @@ Scripts for the Bitburner game
     - Upgrade Existing node resources ( ram, level or core)
 3. servers.js : 
     - Server discovery code
-    - Hack servers by DFS path traversals
+    - Hack servers by BFS path traversals
 4. hack.js : 
     `Usage : run hack.js <serverName> <threads> <function>
     `<function>` can be `hack`, `grow` or `weaken` 
