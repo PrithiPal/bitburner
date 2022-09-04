@@ -29,25 +29,26 @@
      const billion = half_billion * 2
  
  
-     const EMERGENCY_FUND = 1000 // Will spend only if more than this amount.
-     const SLEEP_SECONDS = 2 // Time in between the 
+     const EMERGENCY_FUND = 500 // Will spend only if more than this amount.
+     const SLEEP_SECONDS = 0 // Time in between the 
      
-     let newNode = false
+     let newNodeFlag = false
+     let newNodeIdx = null ; 
      while(true){
-         if(newNode){
-             mainCluster.reloadAllNodes()
-             newNode = false
+         if(newNodeFlag){
+             mainCluster.addNode(newNodeIdx)
+             newNodeFlag = false
          }
          else{
              mainCluster.refresh()
          }
-         if (buyNewNodes(EMERGENCY_FUND)){
-             newNode = true
+         newNodeIdx = buyNewNodes(EMERGENCY_FUND)
+         if (newNodeIdx != -1){
+             newNodeFlag = true
          }
          upgradeBottomNodes(mainCluster, EMERGENCY_FUND)
          await ns_global.sleep(SLEEP_SECONDS*1000);
      }
- 
      // mainCluster.getBottomNodes(5,'ram').forEach((node)=>ns.tprint(`${node.name} : ${node.ram}`))
      // mainCluster.getBottomNodes(5,'level').forEach((node)=>ns.tprint(`${node.name} : ${node.level}`))
      // mainCluster.getBottomNodes(5,'cores').forEach((node)=>ns.tprint(`${node.name} : ${node.cores}`))
@@ -60,12 +61,12 @@
      const purchaseCost = ns_global.hacknet.getPurchaseNodeCost()
      const availableMoney = ns_global.getServerMoneyAvailable("home") - thresh
      if (purchaseCost < availableMoney){
-         ns_global.hacknet.purchaseNode()
+         index = ns_global.hacknet.purchaseNode()
          ns_global.print(`Purchased New Node! for ${purchaseCost}`)
-         return true
+         return index
      }
      ns_global.print(`Need ${purchaseCost - availableMoney} money to buy next node`)
-     return false
+     return -1
  }
  
  
@@ -80,7 +81,7 @@
      const upgradeConfig = ['level', 'ram', 'core']
  
      upgradeConfig.forEach((config)=>{		
-         [...cluster.getBottomNodes(1,config)].forEach((node)=>{
+         cluster.getBottomNodes(ns_global.hacknet.numNodes(),config).forEach((node)=>{
              if(config === 'level'){
                  node.upgradeResource('level', thresh)
              }
@@ -121,7 +122,7 @@
      }
  
      getSortedNodes(criteria){
-         return [...this.nodes].sort((nodeA,nodeB)=>{
+         return this.nodes.sort((nodeA,nodeB)=>{
                  if(nodeA.stats[criteria]>nodeB.stats[criteria]){
                      return -1
                  }
@@ -146,9 +147,9 @@
      getBottomNodes(n, criteria){
          const sorted = this.getSortedNodes(criteria).reverse()
          if (n===-1){
-             return [...sorted]
+             return sorted
          }
-         return [...sorted.slice(0,n)]
+         return sorted.slice(0,n)
      }
  }
  
@@ -189,26 +190,31 @@
          const functionMaps = {
              'ram' : {
                  'cost' : ns_global.hacknet.getRamUpgradeCost,
-                 'upgrade' : ns_global.hacknet.upgradeRam
+                 'upgrade' : ns_global.hacknet.upgradeRam,
+                 'current' : this.ram
              },
              'level' : {
                  'cost' : ns_global.hacknet.getLevelUpgradeCost,
-                 'upgrade' : ns_global.hacknet.upgradeLevel
+                 'upgrade' : ns_global.hacknet.upgradeLevel,
+                 'current' : this.level
              },
              'core' : {
                  'cost' : ns_global.hacknet.getCoreUpgradeCost,
-                 'upgrade' : ns_global.hacknet.upgradeCore
+                 'upgrade' : ns_global.hacknet.upgradeCore,
+                 'current' : this.cores
              }
          }
  
-         const purchaseCost = functionMaps[resource]['cost'](this.index,this.cores+1)
+         const currentResource = functionMaps[resource]['current']
+ 
+         const purchaseCost = functionMaps[resource]['cost'](this.index,currentResource+1)
          const availableMoney = ns_global.getServerMoneyAvailable("home") - thresh
          if(purchaseCost < availableMoney){
-             functionMaps[resource]['upgrade'](this.index,this.cores+1)
-             ns_global.print(`Upgraded '${this.name}' ${resource} from ${this.cores-1} to ${this.cores}`)
+             functionMaps[resource]['upgrade'](this.index,currentResource+1)
+             ns_global.print(`Upgraded '${this.name}' ${resource} from ${currentResource-1} to ${currentResource}`)
              return true
          }
-         ns_global.print(`Need ${purchaseCost-availableMoney} to upgrade '${this.cores} Cores'`)
+         ns_global.print(`Need ${purchaseCost-availableMoney} to upgrade '${currentResource} ${resource}'`)
          return false
  
      }
