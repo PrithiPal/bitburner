@@ -29,22 +29,16 @@
      const billion = half_billion * 2
  
  
-     const EMERGENCY_FUND = 500 // Will spend only if more than this amount.
+     const EMERGENCY_FUND = 10 // Will spend only if more than this amount.
      const SLEEP_SECONDS = 0 // Time in between the 
      
-     let newNodeFlag = false
-     let newNodeIdx = null ; 
+     let newNodeIdx = -1 ; 
      while(true){
-         if(newNodeFlag){
-             mainCluster.addNode(newNodeIdx)
-             newNodeFlag = false
-         }
-         else{
-             mainCluster.refresh()
-         }
          newNodeIdx = buyNewNodes(EMERGENCY_FUND)
-         if (newNodeIdx != -1){
-             newNodeFlag = true
+         if (newNodeIdx !== -1){
+             ns_global.tprint(`buying new node ${newNodeIdx}`)
+             mainCluster.addNode(newNodeIdx)
+             
          }
          upgradeBottomNodes(mainCluster, EMERGENCY_FUND)
          await ns_global.sleep(SLEEP_SECONDS*1000);
@@ -61,11 +55,10 @@
      const purchaseCost = ns_global.hacknet.getPurchaseNodeCost()
      const availableMoney = ns_global.getServerMoneyAvailable("home") - thresh
      if (purchaseCost < availableMoney){
-         index = ns_global.hacknet.purchaseNode()
+         const index = ns_global.hacknet.purchaseNode()
          ns_global.print(`Purchased New Node! for ${purchaseCost}`)
          return index
      }
-     ns_global.print(`Need ${purchaseCost - availableMoney} money to buy next node`)
      return -1
  }
  
@@ -80,7 +73,7 @@
  const upgradeBottomNodes = (cluster, thresh) =>{
      const upgradeConfig = ['level', 'ram', 'core']
  
-     upgradeConfig.forEach((config)=>{		
+     upgradeConfig.forEach((config)=>{	
          cluster.getBottomNodes(ns_global.hacknet.numNodes(),config).forEach((node)=>{
              if(config === 'level'){
                  node.upgradeResource('level', thresh)
@@ -116,10 +109,7 @@
      getAllNodes(){
          return this.nodes 
      }
-     
-     refresh(){
-         this.nodes.forEach(node=>node.loadValues())
-     }
+ 
  
      getSortedNodes(criteria){
          return this.nodes.sort((nodeA,nodeB)=>{
@@ -186,7 +176,7 @@
  
  
      upgradeResource(resource,thresh){
-         
+         this.loadValues()
          const functionMaps = {
              'ram' : {
                  'cost' : ns_global.hacknet.getRamUpgradeCost,
@@ -206,17 +196,16 @@
          }
  
          const currentResource = functionMaps[resource]['current']
- 
-         const purchaseCost = functionMaps[resource]['cost'](this.index,currentResource+1)
+         const purchaseCost = functionMaps[resource]['cost'](this.index,1)
          const availableMoney = ns_global.getServerMoneyAvailable("home") - thresh
          if(purchaseCost < availableMoney){
-             functionMaps[resource]['upgrade'](this.index,currentResource+1)
-             ns_global.print(`Upgraded '${this.name}' ${resource} from ${currentResource-1} to ${currentResource}`)
+             functionMaps[resource]['upgrade'](this.index,1)
+             ns_global.print(`Upgraded '${this.name}' ${resource} from ${currentResource-1} to ${currentResource}  for Node ${this.index}`)
              return true
          }
-         ns_global.print(`Need ${purchaseCost-availableMoney} to upgrade '${currentResource} ${resource}'`)
+         //ns_global.print(`Need ${purchaseCost-availableMoney} to upgrade '${currentResource} ${resource}' for Node ${this.index}`)
          return false
  
      }
  
- }
+}
