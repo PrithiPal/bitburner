@@ -4,7 +4,6 @@ import { AttackLauncher, Attack  } from 'attack';
 import { discoverServer } from 'discovery'
 
 
-
 class Server {
 	constructor(name, neighbors) {
 		this.name = name;
